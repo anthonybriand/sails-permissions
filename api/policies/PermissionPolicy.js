@@ -117,16 +117,21 @@ function deniedPolicy(_data, options) {
   var results = [];
   Promise.map(data, function (object) {
     return new Promise(function (resolveDenied, rejectDenied) {
-      var clOpts = _.clone(opts);
-      clOpts.object = object.id;
-      PermissionService.isDenied(clOpts)
-        .then(function (permissions) {
-          if (!permissions || permissions.length === 0) {
-            results.push(object);
-          }
+      if (object) {
+        var clOpts = _.clone(opts);
+        clOpts.object = object.id;
+        PermissionService.isDenied(clOpts)
+          .then(function (permissions) {
+            if (!permissions || permissions.length === 0) {
+              results.push(object);
+            }
 
-          resolveDenied();
-        }).catch(rejectDenied);
+            resolveDenied();
+          }).catch(rejectDenied);
+      } else {
+        results.push(object);
+        resolveDenied();
+      }
     });
   }).then(function () {
     if (results.length === 0 && !_.isArray(_data)) {
