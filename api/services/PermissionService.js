@@ -137,14 +137,44 @@ module.exports = {
             relation: 'user',
             user: user
           });
-        }).then(function (permission) {
-          if (permission.length > 0) {
-            resolve(true);
+        }).then(function (permissions) {
+          if (permissions.length > 0) {
+            var allow = true;
+            permissions.forEach(function (permission) {
+              if (permission.deny) {
+                allow = false;
+              }
+            });
+
+            resolve(allow);
           } else {
             resolve(false);
           }
         }).catch(reject);
       });
     }
+  },
+
+  /**
+   * Check if user / role have a deny permission to perform action
+   * @param options
+   */
+  isDenied: function (options) {
+    var action = PermissionService.getMethod(options.method);
+
+    return User.findOne(options.user.id)
+      .populate('roles')
+      .then(function (user) {
+        return Permission.find({
+          model: options.model.id,
+          action: action,
+          object: options.object,
+          or: [
+            {user: user.id},
+            {role: _.pluck(user.roles, 'id')}
+          ],
+          deny: true
+        });
+      });
   }
 };

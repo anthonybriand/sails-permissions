@@ -40,17 +40,48 @@ describe('PermissionController', function () {
               return done(err);
 
             agent
-              .post('/auth/local')
+              .post("/permission")
+              .set('Authorization', adminAuth.Authorization)
               .send({
-                identifier: 'newuser1',
-                password: 'lalalal1234'
+                model: 2,
+                object: 21,
+                action: "read",
+                relation: "user",
+                user: 2,
+                deny: true
               })
-              .expect(200)
-              .end(function (err, res) {
+              .expect(201, function (err) {
+                  if (err)
+                    return done(err);
 
-                agent.saveCookies(res);
+                  agent
+                    .post("/permission")
+                    .set('Authorization', adminAuth.Authorization)
+                    .send({
+                      model: 2,
+                      object: 20,
+                      action: "read",
+                      relation: "role",
+                      role: 2,
+                      deny: true
+                    })
+                    .expect(201, function (err) {
+                      if (err)
+                        return done(err);
 
-                return done(err);
+                      agent
+                        .post('/auth/local')
+                        .send({
+                          identifier: 'newuser1',
+                          password: 'lalalal1234'
+                        })
+                        .expect(200)
+                        .end(function (err, res) {
+
+                          agent.saveCookies(res);
+                          return done(err);
+                        });
+                    });
               });
           });
 
@@ -75,6 +106,66 @@ describe('PermissionController', function () {
 
               assert.ifError(permissions.error);
               done(err || permissions.error);
+
+            });
+
+        });
+
+        it('should be able to read permissions but should not contain permissions 20,21', function (done) {
+
+          agent
+            .get('/permission')
+            .expect(200)
+            .end(function (err, res) {
+
+              var permissions = res.body;
+
+              var contains = false;
+              permissions.forEach(function (object) {
+                if (object.id == 21 || object.id == 20) {
+                  contains = true;
+                }
+              });
+
+              assert.equal(contains, false);
+              assert.ifError(permissions.error);
+              done(err || permissions.error);
+
+            });
+
+        });
+
+      });
+
+      describe('#find(21)', function () {
+
+        it('should not be able to read permission 21 (user level deny permission)', function (done) {
+
+          agent
+            .get('/permission/21')
+            .expect(400)
+            .end(function (err, res) {
+
+                assert(_.isString(res.body.error));
+                done(err);
+
+            });
+
+        });
+
+      });
+
+      describe('#find(20)', function () {
+
+        it('should not be able to read permission 20 (role level deny permission)', function (done) {
+
+          agent
+            .get('/permission/20')
+            .expect(400)
+            .end(function (err, res) {
+
+                assert(_.isString(res.body.error));
+                done(err);
 
             });
 

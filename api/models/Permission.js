@@ -90,6 +90,14 @@ module.exports = {
     user: {
       model: 'User'
       // Validate manually
+    },
+
+    /**
+     * Deny the User / Role to perform action
+     */
+    deny: {
+      type: 'boolean',
+      defaultsTo: false
     }
   },
 

@@ -22,7 +22,8 @@ module.exports = function (req, res, next) {
   var options = {
     model: req.model,
     method: req.method,
-    user: req.user
+    user: req.user,
+    object: req.params.id || -1
   };
 
   PermissionService
@@ -30,13 +31,17 @@ module.exports = function (req, res, next) {
     .then(function (permissions) {
       sails.log.silly('PermissionPolicy:', permissions.length, 'permissions grant', req.method, 'on', req.model.name, 'for', req.user.username);
 
-      if (!permissions || permissions.length === 0) {
-        return res.badRequest({ error: PermissionService.getErrorMessage(options) });
-      }
+      PermissionService.isDenied(options)
+        .then(function (denied) {
+          if (!permissions || permissions.length === 0 || (denied && denied.length > 0)) {
+            return res.badRequest({ error: PermissionService.getErrorMessage(options) });
+          }
 
-      req.permissions = permissions;
+          req.permissions = permissions;
+          bindResponsePolicyDenied(req, res);
 
-      next();
+          next();
+        });
     });
 };
 
@@ -84,4 +89,55 @@ function responsePolicy (_data, options) {
         res._ok(permitted[0], options);
       }
     });
+}
+
+function bindResponsePolicyDenied(req, res) {
+  res._ok = res.ok;
+
+  res.ok = _.bind(deniedPolicy, {
+    req: req,
+    res: res
+  });
+}
+
+function deniedPolicy(_data, options) {
+  var req = this.req;
+  var res = this.res;
+  var opts = {
+    model: req.model,
+    method: req.method,
+    user: req.user
+  };
+
+  var data = _.isArray(_data) ? _data : [_data];
+
+  //sails.log('data', _data);
+  //sails.log('options', options);
+
+  var results = [];
+  Promise.map(data, function (object) {
+    return new Promise(function (resolveDenied, rejectDenied) {
+      var clOpts = _.clone(opts);
+      clOpts.object = object.id;
+      PermissionService.isDenied(clOpts)
+        .then(function (permissions) {
+          if (!permissions || permissions.length === 0) {
+            results.push(object);
+          }
+
+          resolveDenied();
+        }).catch(rejectDenied);
+    });
+  }).then(function () {
+    if (results.length === 0) {
+      //sails.log('permitted.length === 0');
+      return res.send(404);
+    }
+    else if (_.isArray(_data)) {
+      return res._ok(results, options);
+    }
+    else {
+      res._ok(results[0], options);
+    }
+  });
 }
