@@ -129,7 +129,7 @@ function deniedPolicy(_data, options) {
         }).catch(rejectDenied);
     });
   }).then(function () {
-    if (results.length === 0) {
+    if (results.length === 0 && !_.isArray(_data)) {
       //sails.log('permitted.length === 0');
       return res.send(404);
     }
