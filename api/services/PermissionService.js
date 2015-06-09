@@ -175,6 +175,39 @@ module.exports = {
           ],
           deny: true
         });
+      }).then(function (permissions) {
+          return new Promise(function (resolveDeny, rejectDeny) {
+            if (permissions && permissions.length > 0) {
+              var criteria = {
+                model: options.model.id,
+                action: action,
+                object: options.object,
+                relation: "user",
+                deny: false
+              };
+              var mode = "";
+              permissions.forEach(function (permission) {
+                if (permission.deny) {
+                  mode = permission.relation;
+                }
+              });
+
+              if (mode == "role") {
+                Permission.find(criteria)
+                  .then(function (permissionsUser) {
+                    if (permissionsUser && permissionsUser.length > 0) {
+                      resolveDeny(false);
+                    } else {
+                      resolveDeny(permissions);
+                    }
+                  }).catch(rejectDeny);
+              } else {
+                resolveDeny(permissions);
+              }
+            } else {
+              resolveDeny(permissions);
+            }
+          });
       });
   }
 };

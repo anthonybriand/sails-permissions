@@ -69,25 +69,54 @@ describe('PermissionController', function () {
                       if (err)
                         return done(err);
 
-                      agent
-                        .post('/auth/local')
-                        .send({
-                          identifier: 'newuser1',
-                          password: 'lalalal1234'
-                        })
-                        .expect(200)
-                        .end(function (err, res) {
+                        agent
+                          .post("/permission")
+                          .set('Authorization', adminAuth.Authorization)
+                          .send({
+                            model: 2,
+                            object: 19,
+                            action: "read",
+                            relation: "role",
+                            role: 2,
+                            deny: true
+                          })
+                          .expect(201, function (err) {
+                            if (err)
+                              return done(err);
 
-                          agent.saveCookies(res);
-                          return done(err);
-                        });
+                              agent
+                                .post("/permission")
+                                .set('Authorization', adminAuth.Authorization)
+                                .send({
+                                  model: 2,
+                                  object: 19,
+                                  action: "read",
+                                  relation: "user",
+                                  user: 2
+                                })
+                                .expect(201, function (err) {
+                                  if (err)
+                                    return done(err);
+
+                                  agent
+                                    .post('/auth/local')
+                                    .send({
+                                      identifier: 'newuser1',
+                                      password: 'lalalal1234'
+                                    })
+                                    .expect(200)
+                                    .end(function (err, res) {
+                                      agent.saveCookies(res);
+                                      return done(err);
+                                    });
+                                });
+                          });
+                      });
                     });
               });
           });
 
       });
-
-  });
 
   describe('Permission Controller', function () {
 
@@ -135,6 +164,30 @@ describe('PermissionController', function () {
 
         });
 
+        it('should be able to read permissions and should contain permission 19', function (done) {
+
+          agent
+              .get('/permission')
+              .expect(200)
+              .end(function (err, res) {
+
+                var permissions = res.body;
+
+                var contains = false;
+                permissions.forEach(function (object) {
+                  if (object.id == 19) {
+                    contains = true;
+                  }
+                });
+
+                assert.equal(contains, true);
+                assert.ifError(permissions.error);
+                done(err || permissions.error);
+
+              });
+
+        });
+
       });
 
       describe('#find(21)', function () {
@@ -166,6 +219,24 @@ describe('PermissionController', function () {
 
                 assert(_.isString(res.body.error));
                 done(err);
+
+            });
+
+        });
+
+      });
+
+      describe('#find(19)', function () {
+
+        it('should be able to read permission 19 (role level deny permission and user level granted permission)', function (done) {
+
+          agent
+            .get('/permission/19')
+            .expect(200)
+            .end(function (err, res) {
+              var permissions = res.body;
+              assert.ifError(permissions.error);
+              done(err || permissions.error);
 
             });
 
