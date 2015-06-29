@@ -1,3 +1,4 @@
+var Promise = require('bluebird');
 /**
  * PermissionPolicy
  * @depends OwnerPolicy
@@ -29,7 +30,8 @@ module.exports = function (req, res, next) {
   PermissionService
     .findModelPermissions(options)
     .then(function (permissions) {
-      sails.log.silly('PermissionPolicy:', permissions.length, 'permissions grant', req.method, 'on', req.model.name, 'for', req.user.username);
+      sails.log.silly('PermissionPolicy:', permissions.length, 'permissions grant',
+          req.method, 'on', req.model.name, 'for', req.user.username);
 
       PermissionService.isDenied(options)
         .then(function (denied) {
