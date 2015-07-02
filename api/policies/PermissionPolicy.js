@@ -24,7 +24,7 @@ module.exports = function (req, res, next) {
     model: req.model,
     method: req.method,
     user: req.user,
-    object: (req.params.id ) ? {id: req.params.id} : -1
+    object: (req.params.id) ? {id: req.params.id} : -1
   };
 
   PermissionService
@@ -33,17 +33,24 @@ module.exports = function (req, res, next) {
       sails.log.silly('PermissionPolicy:', permissions.length, 'permissions grant',
           req.method, 'on', req.model.name, 'for', req.user.username);
 
-      PermissionService.isDenied(options)
-        .then(function (denied) {
-          if (!permissions || permissions.length === 0 || (denied && denied.length > 0)) {
-            return res.badRequest({ error: PermissionService.getErrorMessage(options) });
-          }
+      if (options.method == "GET" && options.object == -1 && _.isObject(req.query) && Object.keys(req.query).length > 0) {
+        req.permissions = permissions;
+        bindResponsePolicyDenied(req, res);
 
-          req.permissions = permissions;
-          bindResponsePolicyDenied(req, res);
+        next();
+      } else {
+        PermissionService.isDenied(options)
+          .then(function (denied) {
+            if (!permissions || permissions.length === 0 || (denied && denied.length > 0)) {
+              return res.badRequest({ error: PermissionService.getErrorMessage(options) });
+            }
 
-          next();
-        });
+            req.permissions = permissions;
+            bindResponsePolicyDenied(req, res);
+
+            next();
+          });
+      }
     });
 };
 
