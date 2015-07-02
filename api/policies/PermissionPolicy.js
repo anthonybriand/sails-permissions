@@ -24,7 +24,7 @@ module.exports = function (req, res, next) {
     model: req.model,
     method: req.method,
     user: req.user,
-    object: req.params.id || -1
+    object: (req.params.id ) ? {id: req.params.id} : -1
   };
 
   PermissionService
@@ -94,7 +94,7 @@ function responsePolicy (_data, options) {
 }
 
 function bindResponsePolicyDenied(req, res) {
-  res._ok = res.ok;
+  res.__ok = res.ok;
 
   res.ok = _.bind(deniedPolicy, {
     req: req,
@@ -108,7 +108,8 @@ function deniedPolicy(_data, options) {
   var opts = {
     model: req.model,
     method: req.method,
-    user: req.user
+    user: req.user,
+    body: req.body
   };
 
   var data = _.isArray(_data) ? _data : [_data];
@@ -121,7 +122,7 @@ function deniedPolicy(_data, options) {
     return new Promise(function (resolveDenied, rejectDenied) {
       if (object) {
         var clOpts = _.clone(opts);
-        clOpts.object = object.id;
+        clOpts.object = object;
         PermissionService.isDenied(clOpts)
           .then(function (permissions) {
             if (!permissions || permissions.length === 0) {
@@ -141,10 +142,10 @@ function deniedPolicy(_data, options) {
       return res.send(404);
     }
     else if (_.isArray(_data)) {
-      return res._ok(results, options);
+      return res.__ok(results, options);
     }
     else {
-      res._ok(results[0], options);
+      res.__ok(results[0], options);
     }
-  });
+  }).catch(res.negotiate);
 }

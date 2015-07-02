@@ -48,7 +48,11 @@ describe('PermissionController', function () {
               .set('Authorization', adminAuth.Authorization)
               .send({
                 model: 2,
-                object: 21,
+                criteria: {
+                  where: {
+                    id: 21
+                  }
+                },
                 action: "read",
                 relation: "user",
                 user: 2,
@@ -63,7 +67,11 @@ describe('PermissionController', function () {
                     .set('Authorization', adminAuth.Authorization)
                     .send({
                       model: 2,
-                      object: 20,
+                      criteria: {
+                        where: {
+                          id: 20
+                        }
+                      },
                       action: "read",
                       relation: "role",
                       role: 2,
@@ -78,7 +86,11 @@ describe('PermissionController', function () {
                           .set('Authorization', adminAuth.Authorization)
                           .send({
                             model: 2,
-                            object: 19,
+                            criteria: {
+                              where: {
+                                id: 19
+                              }
+                            },
                             action: "read",
                             relation: "role",
                             role: 2,
@@ -93,7 +105,11 @@ describe('PermissionController', function () {
                                 .set('Authorization', adminAuth.Authorization)
                                 .send({
                                   model: 2,
-                                  object: 19,
+                                  criteria: {
+                                    where: {
+                                      id: 19
+                                    }
+                                  },
                                   action: "read",
                                   relation: "user",
                                   user: 2
