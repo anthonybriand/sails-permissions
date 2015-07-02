@@ -339,9 +339,7 @@ describe('User Controller', function() {
         request(sails.hooks.http.app)
           .get('/role')
           .set('Authorization', newUserAuth.Authorization)
-          .send({
-            name: 'updatedInactiveName'
-          })
+          .send()
           .expect(200)
           .end(function(err, res) {
             res.body.forEach(function(role) {
@@ -357,11 +355,9 @@ describe('User Controller', function() {
       it('should have filtered out all of the permissions results', function(done) {
 
         request(sails.hooks.http.app)
-          .get('/permission')
+          .get('/permission?name=updatedInactiveName')
           .set('Authorization', newUserAuth.Authorization)
-          .send({
-            name: 'updatedInactiveName'
-          })
+          .send()
           .expect(404)
           .end(function(err, res) {
             done(err);

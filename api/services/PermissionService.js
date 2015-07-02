@@ -3,7 +3,6 @@ var methodMap = {
   POST: 'create',
   GET: 'read',
   PUT: 'update',
-  PATCH: 'update',
   DELETE: 'delete'
 };
 
@@ -313,29 +312,31 @@ module.exports = {
     return ok;
   },
 
-  /**
-   * Check if the user (out of role) is granted to perform action on given objects
-   * @param objects
-   * @param user
-   * @param action
-   * @param model
-   * @returns {*}
-   */
-  isAllowedToPerformAction: function (objects, user, action, model) {
+    /**
+     * Check if the user (out of role) is granted to perform action on given objects
+     * @param objects
+     * @param user
+     * @param action
+     * @param model
+     * @param body
+     * @returns {*}
+     */
+  isAllowedToPerformAction: function (objects, user, action, model, body) {
     if (!_.isArray(objects)) {
-      return PermissionService.isAllowedToPerformSingle(user.id, action, model)(objects);
+      return PermissionService.isAllowedToPerformSingle(user.id, action, model, body)(objects);
     }
-    return new Promise.map(objects, PermissionService.isAllowedToPerformSingle(user.id, action, model));
+    return new Promise.map(objects, PermissionService.isAllowedToPerformSingle(user.id, action, model, body));
   },
 
-  /**
-   * Resolve if the user have the permission to perform this action
-   * @param user
-   * @param action
-   * @param model
-   * @returns {Function}
-   */
-  isAllowedToPerformSingle: function (user, action, model) {
+    /**
+     * Resolve if the user have the permission to perform this action
+     * @param user
+     * @param action
+     * @param model
+     * @param body
+     * @returns {Function}
+     */
+  isAllowedToPerformSingle: function (user, action, model, body) {
     return function (obj) {
       return new Promise(function (resolve, reject) {
         Model.findOne({
@@ -343,20 +344,18 @@ module.exports = {
         }).then(function (model) {
           return Permission.find({
             model: model.id,
-            object: obj.id,
             action: action,
             relation: 'user',
             user: user
-          });
+          }).populate('criteria');
         }).then(function (permissions) {
           if (permissions.length > 0) {
             var allow = true;
             permissions.forEach(function (permission) {
-              if (permission.deny) {
+              if (permission.deny && PermissionService.hasPassingCriteria(obj, permission, body)) {
                 allow = false;
               }
             });
-
             resolve(allow);
           } else {
             resolve(false);
@@ -379,35 +378,46 @@ module.exports = {
         return Permission.find({
           model: options.model.id,
           action: action,
-          object: options.object,
           or: [
             {user: user.id},
             {role: _.pluck(user.roles, 'id')}
           ],
           deny: true
-        });
+        }).populate('criteria');
       }).then(function (permissions) {
           return new Promise(function (resolveDeny, rejectDeny) {
             if (permissions && permissions.length > 0) {
               var criteria = {
                 model: options.model.id,
                 action: action,
-                object: options.object,
                 relation: "user",
+                user: options.user.id,
                 deny: false
               };
               var mode = "";
               permissions.forEach(function (permission) {
-                if (permission.deny) {
-                  mode = permission.relation;
+                if (PermissionService.hasPassingCriteria(options.object, [permission], options.body || {id: options.object.id})) {
+                  if (permission.deny) {
+                    mode = permission.relation;
+                  }
                 }
               });
 
               if (mode == "role") {
-                Permission.find(criteria)
+                Permission.find(criteria).populate('criteria')
                   .then(function (permissionsUser) {
                     if (permissionsUser && permissionsUser.length > 0) {
-                      resolveDeny(false);
+                      var denied = false;
+                      permissionsUser.forEach(function (permissionUser) {
+                        if (PermissionService.hasPassingCriteria(options.object, [permissionUser], options.body || {id: options.object.id})) {
+                          if (permissionUser.deny) {
+                            denied = [permissionUser];
+                          }
+                        } else {
+                          denied = [permissionUser];
+                        }
+                      });
+                      resolveDeny(denied);
                     } else {
                       resolveDeny(permissions);
                     }

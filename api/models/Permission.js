@@ -61,15 +61,6 @@ module.exports = {
     },
 
     /**
-     * A list of criteria.  If any of the criteria match the request, the action is allowed.
-     * If no criteria are specified, it is ignored altogether.
-     */
-    criteria: {
-      collection: 'Criteria',
-      via: 'permission'
-    },
-
-    /**
      * The User to which this Permission grants create, read, update, and/or
      * delete privileges.
      */
@@ -79,13 +70,21 @@ module.exports = {
     },
 
     /**
+     * A list of criteria.  If any of the criteria match the request, the action is allowed.
+     * If no criteria are specified, it is ignored altogether.
+     */
+    criteria: {
+      collection: 'Criteria',
+      via: 'permission'
+    },
+
+    /**
      * Deny the User / Role to perform action
      */
     deny: {
       type: 'boolean',
       defaultsTo: false
     }
-
   },
 
   afterValidate: [
