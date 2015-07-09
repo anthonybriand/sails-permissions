@@ -3,7 +3,8 @@ var methodMap = {
   POST: 'create',
   GET: 'read',
   PUT: 'update',
-  DELETE: 'delete'
+  DELETE: 'delete',
+  PATCH: 'update'
 };
 
 var findRecords = require('sails/lib/hooks/blueprints/actions/find');
