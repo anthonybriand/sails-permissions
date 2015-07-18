@@ -1,8 +1,8 @@
 {
   "name": "sails-permissions",
-  "version": "1.2.1",
+  "version": "1.3.1",
   "description": "Comprehensive user permissions and entitlements system for sails.js and Waterline. Supports user authentication with passport.js, role-based permissioning, object ownership, and row-level security.",
-  "main": "index.js",
+  "main": "api/hooks/sails-permissions.js",
   "scripts": {
     "test": "rm -rf .tmp && mocha --reporter spec"
   },
@@ -22,6 +22,8 @@
     "grant",
     "roles",
     "security",
+    "rbac",
+    "acl",
     "enterprise",
     "audit",
     "trail",
@@ -35,9 +37,8 @@
   "homepage": "https://github.com/tjwebb/sails-permissions",
   "devDependencies": {
     "jshint": "^2.8.0",
-    "lodash": ">2.4.0",
-    "mocha": "^1.21.4",
-    "request": "^2.53.0",
+    "mocha": "^2.x.x",
+    "request": "^2.58.0",
     "sails": ">0.10.0",
     "sails-disk": "^0.10.7",
     "supertest": "^0.15.0"
@@ -47,12 +48,18 @@
     "fnv-plus": "^1.2.10",
     "lodash": "^3.10.0",
     "pluralize": "^1.0.1",
-    "sails-auth": "^1.2.6",
+    "sails-auth": "^1.3",
     "sails-generate-entities": "latest",
     "waterline-criteria": "^0.11.1"
+  },
+  "peerDependencies": {
+    "sails-auth": ">=1.3"
   },
   "engines": {
     "node": ">= 0.10",
     "npm": ">= 2.3"
+  },
+  "sails": {
+    "isHook": true
   }
 }
