@@ -27,6 +27,10 @@ module.exports = function (req, res, next) {
     object: (req.params.id) ? {id: req.params.id} : -1
   };
 
+  if (req.options.unknownModel) {
+    return next();
+  }
+
   PermissionService
     .findModelPermissions(options)
     .then(function (permissions) {
