@@ -20,7 +20,7 @@ var Promise = require('bluebird');
  * @param {Function} next
  */
 module.exports = function (req, res, next) {
-  var options = {
+  var options = _.defaults({
     model: req.model,
     method: req.method,
     user: req.user,
@@ -35,7 +35,7 @@ module.exports = function (req, res, next) {
     .findModelPermissions(options)
     .then(function (permissions) {
       sails.log.silly('PermissionPolicy:', permissions.length, 'permissions grant',
-          req.method, 'on', req.model.name, 'for', req.user.username);
+          PermissionService.getAction(options), 'on', req.model.name, 'for', req.user.username);
 
       if (options.method == "GET" && options.object == -1 && _.isObject(req.query) && Object.keys(req.query).length > 0) {
         req.permissions = permissions;
