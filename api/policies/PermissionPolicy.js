@@ -25,7 +25,7 @@ module.exports = function (req, res, next) {
     method: req.method,
     user: req.user,
     object: (req.params.id) ? {id: req.params.id} : -1
-  };
+  });
 
   if (req.options.unknownModel) {
     return next();
