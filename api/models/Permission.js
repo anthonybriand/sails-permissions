@@ -51,6 +51,14 @@ module.exports = {
     },
 
     /**
+     * Define if its a deny permission
+     */
+    deny: {
+      type: "boolean",
+      defaultsTo: false
+    },
+
+    /**
      * The Role to which this Permission grants create, read, update, and/or
      * delete privileges.
      */

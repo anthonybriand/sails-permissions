@@ -421,6 +421,8 @@ describe('User Controller', function() {
           })
           .expect(200)
           .end(function(err, res) {
+            assert.ifError(err);
+
             res.body.forEach(function(role) {
               assert(!role.hasOwnProperty('name'));
               assert(!role.hasOwnProperty('createdAt'));
@@ -467,6 +469,74 @@ describe('User Controller', function() {
 
       });
 
+    });
+
+    describe("User permission deny", function () {
+      it('should not be able to read user 1', function (done) {
+        request(sails.hooks.http.app)
+            .get('/model?name=User')
+            .set('Authorization', adminAuth.Authorization)
+            .end(function (err, res) {
+              request(sails.hooks.http.app)
+                  .post('/permission')
+                  .set('Authorization', adminAuth.Authorization)
+                  .send({
+                    model: res.body[0].id,
+                    action: "read",
+                    relation: "user",
+                    user: newUserId,
+                    deny: true,
+                    criteria: {
+                      where: {
+                        id: adminUserId
+                      }
+                    }
+                  })
+                  .expect(200)
+                  .end(function (err, res) {
+                    request(sails.hooks.http.app)
+                        .get("/user/" + adminUserId)
+                        .set('Authorization', newUserAuth.Authorization)
+                        .send()
+                        .expect(404)
+                        .end(function (err, res) {
+                          assert.ifError(err);
+
+                          done();
+                        });
+                  });
+            });
+      });
+    });
+
+    describe("Role permission deny", function () {
+      it('should not be able to read user 1', function (done) {
+        request(sails.hooks.http.app)
+            .get("/role?name=updatedName")
+            .set('Authorization', adminAuth.Authorization)
+            .end(function (err, res) {
+              request(sails.hooks.http.app)
+                  .put('/permission/26')
+                  .set('Authorization', adminAuth.Authorization)
+                  .send({
+                    relation: "role",
+                    role: res.body[0].id,
+                    user: null
+                  })
+                  .expect(200)
+                  .end(function (err, res) {
+                    request(sails.hooks.http.app)
+                        .get("/user/" + adminUserId)
+                        .set('Authorization', newUserAuth.Authorization)
+                        .send()
+                        .expect(404)
+                        .end(function (err, res) {
+                          assert.ifError(err);
+                          done();
+                        });
+                  });
+            });
+      });
     });
 
   });

@@ -35,6 +35,13 @@ module.exports = function(req, res, next) {
     var criteria = _.compact(_.flatten(_.pluck(permissions, 'criteria')));
 
     if (criteria.length) {
+      criteria.forEach(function (ct) {
+        permissions.forEach(function (p) {
+          if (p.id == ct.permission) {
+            ct.permission = p;
+          }
+        })
+      });
       bindResponsePolicy(req, res, criteria);
     }
     return next();
@@ -83,6 +90,11 @@ function responsePolicy(criteria, _data, options) {
   sails.log.silly('criteria!', criteria);
 
   var permitted = data.reduce(function(memo, item) {
+    var hasRoleLevelDeny = false,
+        hasUserLevelDeny = false,
+        hasUserLevelPermission = false,
+        isFiltered = false;
+
     criteria.some(function(crit) {
       var filtered = wlFilter([item], {
         where: {
@@ -90,17 +102,31 @@ function responsePolicy(criteria, _data, options) {
         }
       }).results;
 
-      if (filtered.length) {
+      if (crit.permission.deny && crit.permission.relation == "role") {
+        hasRoleLevelDeny = true;
+      } else if (crit.permission.deny && crit.permission.relation == "user") {
+        hasUserLevelDeny = true;
+      } else if (!crit.permission.deny && crit.permission.relation == "user") {
+        hasUserLevelPermission = true;
+      }
 
+      if (filtered.length) {
+        isFiltered = true;
         if (crit.blacklist && crit.blacklist.length) {
           crit.blacklist.forEach(function (term) {
             delete item[term];
           });
         }
-        memo.push(item);
+        //memo.push(item);
         return true;
       }
     });
+
+    if (isFiltered) {
+      if ((!hasRoleLevelDeny && !hasUserLevelDeny) || (!hasRoleLevelDeny && hasUserLevelPermission && !hasUserLevelDeny)) {
+        memo.push(item);
+      }
+    }
     return memo;
   }, []);
 
