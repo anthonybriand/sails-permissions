@@ -3,6 +3,7 @@ var methodMap = {
   POST: 'create',
   GET: 'read',
   PUT: 'update',
+  PATCH: 'update',
   DELETE: 'delete'
 };
 
