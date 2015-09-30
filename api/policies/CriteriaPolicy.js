@@ -5,6 +5,7 @@
  * Verify that the User fulfills permission 'where' conditions and attribute blacklist restrictions
  */
 var wlFilter = require('waterline-criteria');
+import _ from 'lodash'
 
 module.exports = function(req, res, next) {
   var permissions = req.permissions;
@@ -20,7 +21,7 @@ module.exports = function(req, res, next) {
   // if we are creating, we don't need to query the db, just check the where clause vs the passed in data
   if (action === 'create') {
     if (!PermissionService.hasPassingCriteria(body, permissions, body)) {
-      return res.badRequest({
+      return res.forbidden({
         error: 'Can\'t create this object, because of failing where clause'
       });
     }
@@ -32,7 +33,18 @@ module.exports = function(req, res, next) {
   if (!_.contains(['update', 'delete'], action)) {
 
     // get all of the where clauses and blacklists into one flat array
-    var criteria = _.compact(_.flatten(_.pluck(permissions, 'criteria')));
+    // if a permission has no criteria then it is always true
+    var criteria = _.compact(_.flatten(
+      _.map(
+        _.pluck(permissions, 'criteria'),
+        function(c) {
+          if (c.length == 0) {
+            return [{where: {}}];
+          }
+          return c;
+        }
+      )
+    ));
 
     if (criteria.length) {
       criteria.forEach(function (ct) {
@@ -56,7 +68,7 @@ module.exports = function(req, res, next) {
       }
 
       if (!PermissionService.hasPassingCriteria(objects, permissions, body, req.user.id)) {
-        return res.badRequest({
+        return res.forbidden({
           error: 'Can\'t ' + action + ', because of failing where clause or attribute permissions'
         });
       }
@@ -76,7 +88,6 @@ function bindResponsePolicy(req, res, criteria) {
 }
 
 function responsePolicy(criteria, _data, options) {
-  sails.log.info('responsePolicy');
   var req = this.req;
   var res = this.res;
   var user = req.owner;
@@ -130,11 +141,11 @@ function responsePolicy(criteria, _data, options) {
     return memo;
   }, []);
 
-  if (permitted.length === 0) {
+  if (isResponseArray) {
+    return res._ok(permitted, options);
+  } else if (permitted.length === 0) {
     sails.log.silly('permitted.length === 0');
     return res.send(404);
-  } else if (isResponseArray) {
-    return res._ok(permitted, options);
   } else {
     res._ok(permitted[0], options);
   }

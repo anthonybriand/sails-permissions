@@ -316,7 +316,7 @@ describe('User Controller', function() {
             email: 'newuser1@example.com',
             password: 'lalalal1234'
           })
-          .expect(400)
+          .expect(403)
           .end(function(err, res) {
 
             var user = res.body;
@@ -344,14 +344,12 @@ describe('User Controller', function() {
           })
           .expect(200)
           .end(function(err, res) {
-
             var user = res.body;
 
             assert.ifError(err);
             assert.equal(user.email, 'newuserupdated@example.com');
 
             done(err);
-
           });
 
       });
@@ -382,7 +380,7 @@ describe('User Controller', function() {
           .send({
             id: 99
           })
-          .expect(400)
+          .expect(403)
           .end(function(err, res) {
             assert(res.body.hasOwnProperty('error'));
             assert.ifError(err);
@@ -400,7 +398,7 @@ describe('User Controller', function() {
           .send({
             name: 'updatedInactiveName'
           })
-          .expect(400)
+          .expect(403)
           .end(function(err, res) {
             assert(res.body.hasOwnProperty('error'));
             assert.ifError(err);
@@ -433,16 +431,27 @@ describe('User Controller', function() {
           });
       });
 
-      it('should have filtered out all of the permissions results', function(done) {
+      it.skip('should have filtered out all of the permissions results', function(done) {
 
         request(sails.hooks.http.app)
           .get('/permission')
           .set('Authorization', newUserAuth.Authorization)
-          .send({
-            name: 'updatedInactiveName'
-          })
-          .expect(404)
+          .expect(200)
           .end(function(err, res) {
+            assert.equal(res.body.length, 0);
+            done(err);
+          });
+      });
+
+      it('should return data from /user/me', function(done) {
+
+        request(sails.hooks.http.app)
+          .get('/user/me')
+          .set('Authorization', newUserAuth.Authorization)
+          .expect(200)
+          .end(function(err, res) {
+            assert.ifError(err);
+            assert(res.body.username == 'newuser');
             done(err);
           });
       });
@@ -455,7 +464,7 @@ describe('User Controller', function() {
           .send({
             email: 'crapadminemail@example.com'
           })
-          .expect(400)
+          .expect(403)
           .end(function(err, res) {
 
             var user = res.body;
@@ -468,6 +477,8 @@ describe('User Controller', function() {
           });
 
       });
+
+
 
     });
 
