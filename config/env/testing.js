@@ -20,7 +20,7 @@ module.exports = {
   },
   connections: {
     testing: {
-      adapter: 'waterline-postgresql'
+      adapter: 'sails-memory'
     }
   },
   hooks: { grunt: false },
